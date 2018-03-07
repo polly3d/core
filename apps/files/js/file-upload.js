@@ -473,6 +473,13 @@ OC.Uploader.prototype = _.extend({
 	davClient: null,
 
 	/**
+	 * Upload progressbar element
+	 *
+	 * @type Object
+	 */
+	$uploadprogressbar: null,
+
+	/**
 	 * Function that will allow us to know if Ajax uploads are supported
 	 * @link https://github.com/New-Bamboo/example-ajax-upload/blob/master/public/index.html
 	 * also see article @link http://blog.new-bamboo.co.uk/2012/01/10/ridiculously-simple-ajax-uploads-with-formdata
@@ -727,7 +734,7 @@ OC.Uploader.prototype = _.extend({
 		// resubmit upload
 		this.submitUploads([upload]);
 	},
-	_trace:false, //TODO implement log handler for JS per class?
+	_trace:true, //TODO implement log handler for JS per class?
 	log:function(caption, e, data) {
 		if (this._trace) {
 			console.log(caption);
@@ -794,13 +801,13 @@ OC.Uploader.prototype = _.extend({
 		var self = this;
 		window.clearInterval(this._progressBarInterval);
 		$('#uploadprogresswrapper .stop').fadeOut();
-		$('#uploadprogressbar').fadeOut(function() {
+		this.$uploadprogressbar.fadeOut(function() {
 			self.$uploadEl.trigger(new $.Event('resized'));
 		});
 	},
 
 	_showProgressBar: function() {
-		$('#uploadprogressbar').fadeIn();
+		this.$uploadprogressbar.fadeIn();
 		this.$uploadEl.trigger(new $.Event('resized'));
 		if (this._progressBarInterval) {
 			window.clearInterval(this._progressBarInterval);
@@ -808,20 +815,25 @@ OC.Uploader.prototype = _.extend({
 		this._progressBarInterval = window.setInterval(_.bind(this._updateProgressBar, this), 1000);
 		this._lastProgress = 0;
 		this._lastProgressStalledSeconds = 0;
+		this._lastProgressStalledTimeoutSeconds = 10;
 	},
 	
 	_updateProgressBar: function() {
-		var progress = parseInt($('#uploadprogressbar').attr('data-loaded'), 10);
-		var total = parseInt($('#uploadprogressbar').attr('data-total'), 10);
+		var progress = parseInt(this.$uploadprogressbar.attr('data-loaded'), 10);
+		var total = parseInt(this.$uploadprogressbar.attr('data-total'), 10);
 		if (progress !== this._lastProgress) {
 			this._lastProgress = progress;
 			this._lastProgressStalledSeconds = 0;
 		} else {
-			if (this._lastProgressStalledSeconds < 1) {
-				this._lastProgressStalledSeconds++;
-			} else if (progress >= total) {
+			this._lastProgressStalledSeconds++;
+			if (progress >= total) {
 				// change message if we stalled at 100%
-				$('#uploadprogressbar .label .desktop').text(t('core', 'Processing files...'));
+				this.$uploadprogressbar.find('.label .desktop').text(t('core', 'Processing files...'));
+			} else if (this._lastProgressStalledSeconds >= this._lastProgressStalledTimeoutSeconds) {
+				// stalling needs to be checked here because the file upload no longer triggers events
+				// restart upload
+				this.log('progress stalled'); // try to save IE from dying
+				$.each(this._uploads, function(i,e){ console.log(e.data.jqXHR.abort()) })
 			}
 		}
 	},
@@ -874,6 +886,8 @@ OC.Uploader.prototype = _.extend({
 
 		$uploadEl = $($uploadEl);
 		this.$uploadEl = $uploadEl;
+
+		this.$uploadprogressbar = $('#uploadprogressbar')
 
 		if ($uploadEl.exists()) {
 			$('#uploadprogresswrapper .stop').on('click', function() {
@@ -1146,14 +1160,14 @@ OC.Uploader.prototype = _.extend({
 					self.log('progress handle fileuploadstart', e, data);
 					$('#uploadprogresswrapper .stop').show();
 					$('#uploadprogresswrapper .label').show();
-					$('#uploadprogressbar').progressbar({value: 0});
-					$('#uploadprogressbar .ui-progressbar-value').
+					self.$uploadprogressbar.progressbar({value: 0});
+					self.$uploadprogressbar.find('.ui-progressbar-value').
 						html('<em class="label inner"><span class="desktop">'
 							+ t('files', 'Uploading...')
 							+ '</span><span class="mobile">'
 							+ t('files', '...')
 							+ '</span></em>');
-                    $('#uploadprogressbar').tipsy({gravity:'n', fade:true, live:true});
+					self.$uploadprogressbar.tipsy({gravity:'n', fade:true, live:true});
 					self._showProgressBar();
 					self.trigger('start', e, data);
 				});
@@ -1179,18 +1193,18 @@ OC.Uploader.prototype = _.extend({
 					}
 					var smoothRemainingSeconds = (bufferTotal / bufferSize); //seconds
 					var h = moment.duration(smoothRemainingSeconds, "seconds").humanize();
-					$('#uploadprogressbar').attr('data-loaded', data.loaded);
-					$('#uploadprogressbar').attr('data-total', data.total);
-					$('#uploadprogressbar .label .mobile').text(h);
-					$('#uploadprogressbar .label .desktop').text(h);
-					$('#uploadprogressbar').attr('original-title',
+					self.$uploadprogressbar.attr('data-loaded', data.loaded);
+					self.$uploadprogressbar.attr('data-total', data.total);
+					self.$uploadprogressbar.find('.label .mobile').text(h);
+					self.$uploadprogressbar.find('.label .desktop').text(h);
+					self.$uploadprogressbar.attr('original-title',
 						t('files', '{loadedSize} of {totalSize} ({bitrate})' , {
 							loadedSize: humanFileSize(data.loaded),
 							totalSize: humanFileSize(data.total),
 							bitrate: humanFileSize(data.bitrate) + '/s'
 						})
 					);
-					$('#uploadprogressbar').progressbar('value', progress);
+					self.$uploadprogressbar.progressbar('value', progress);
 					self.trigger('progressall', e, data);
 				});
 				fileupload.on('fileuploadstop', function(e, data) {
