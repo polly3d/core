@@ -221,22 +221,24 @@ class Manager extends PublicEmitter implements IGroupManager {
 	 */
 	public function search($search, $limit = null, $offset = null, $scope = null) {
 		$groups = [];
-		foreach ($this->backends as $backend) {
-			if (!$backend->isVisibleForScope($scope)) {
-				// skip backend
-				continue;
-			}
-			$groupIds = $backend->getGroups($search, $limit, $offset);
-			foreach ($groupIds as $groupId) {
-				$aGroup = $this->get($groupId);
-				if (!is_null($aGroup)) {
-					$groups[$groupId] = $aGroup;
-				} else {
-					\OC::$server->getLogger()->debug('Group "' . $groupId . '" was returned by search but not found through direct access', array('app' => 'core'));
+		if ($this->userManager->isSearcheable($search)) {
+			foreach ($this->backends as $backend) {
+				if (!$backend->isVisibleForScope($scope)) {
+					// skip backend
+					continue;
 				}
-			}
-			if (!is_null($limit) and $limit <= 0) {
-				return array_values($groups);
+				$groupIds = $backend->getGroups($search, $limit, $offset);
+				foreach ($groupIds as $groupId) {
+					$aGroup = $this->get($groupId);
+					if (!is_null($aGroup)) {
+						$groups[$groupId] = $aGroup;
+					} else {
+						\OC::$server->getLogger()->debug('Group "' . $groupId . '" was returned by search but not found through direct access', array('app' => 'core'));
+					}
+				}
+				if (!is_null($limit) and $limit <= 0) {
+					return array_values($groups);
+				}
 			}
 		}
 		return array_values($groups);

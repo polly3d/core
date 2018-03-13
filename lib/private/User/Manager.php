@@ -248,9 +248,11 @@ class Manager extends PublicEmitter implements IUserManager {
 	public function search($pattern, $limit = null, $offset = null) {
 		$accounts = $this->accountMapper->search('user_id', $pattern, $limit, $offset);
 		$users = [];
-		foreach ($accounts as $account) {
-			$user = $this->getUserObject($account);
-			$users[$user->getUID()] = $user;
+		if ($this->isSearcheable($pattern)) {
+			foreach ($accounts as $account) {
+				$user = $this->getUserObject($account);
+				$users[$user->getUID()] = $user;
+			}
 		}
 
 		return $users;
@@ -267,9 +269,11 @@ class Manager extends PublicEmitter implements IUserManager {
 	public function find($pattern, $limit = null, $offset = null) {
 		$accounts = $this->accountMapper->find($pattern, $limit, $offset);
 		$users = [];
-		foreach ($accounts as $account) {
-			$user = $this->getUserObject($account);
-			$users[$user->getUID()] = $user;
+		if ($this->isSearcheable($pattern)) {
+			foreach ($accounts as $account) {
+				$user = $this->getUserObject($account);
+				$users[$user->getUID()] = $user;
+			}
 		}
 		return $users;
 	}
@@ -283,10 +287,27 @@ class Manager extends PublicEmitter implements IUserManager {
 	 * @return \OC\User\User[]
 	 */
 	public function searchDisplayName($pattern, $limit = null, $offset = null) {
-		$accounts = $this->accountMapper->search('display_name', $pattern, $limit, $offset);
-		return array_map(function(Account $account) {
-			return $this->getUserObject($account);
-		}, $accounts);
+		if ($this->isSearcheable($pattern)) {
+			$accounts = $this->accountMapper->search('display_name', $pattern, $limit, $offset);
+			return array_map(function(Account $account) {
+				return $this->getUserObject($account);
+			}, $accounts);
+
+		}
+		return [];
+	}
+
+	/**
+	 * @param string $pattern
+	 * @return bool
+	 */
+	public function isSearcheable($pattern) {
+		$trimmed = trim($pattern);
+		return $trimmed === '' || strlen($trimmed) >= $this->getSearchMinLength();
+	}
+
+	public function getSearchMinLength() {
+		return $this->config->getSystemValue('user.search_min_length', 4);
 	}
 
 	/**

@@ -99,6 +99,8 @@ class Capabilities implements ICapability {
 			'incoming' => $this->config->getAppValue('files_sharing', 'incoming_server2server_share_enabled', 'yes') === 'yes'
 		];
 
+		$res['search_min_length'] = \OC::$server->getUserManager()->getSearchMinLength();
+
 		return [
 			'files_sharing' => $res,
 		];
