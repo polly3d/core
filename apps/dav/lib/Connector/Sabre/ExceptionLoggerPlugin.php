@@ -26,6 +26,7 @@
 
 namespace OCA\DAV\Connector\Sabre;
 
+use OCP\Files\ExcludeForbiddenException;
 use OCP\ILogger;
 use Sabre\DAV\Exception;
 use Sabre\HTTP\Response;
@@ -87,6 +88,11 @@ class ExceptionLoggerPlugin extends \Sabre\DAV\ServerPlugin {
 	 *
 	 */
 	public function logException(\Exception $ex) {
+		if ($ex->getPrevious() instanceof ExcludeForbiddenException) {
+			//Don't log because its already been logged may be by different
+			//app or so.
+			return null;
+		}
 		$exceptionClass = get_class($ex);
 		$level = \OCP\Util::FATAL;
 		if (isset($this->nonFatalExceptions[$exceptionClass])) {
