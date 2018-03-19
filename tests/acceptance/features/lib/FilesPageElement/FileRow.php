@@ -54,6 +54,9 @@ class FileRow extends OwnCloudPage {
 	protected $restoreLinkXpath = '//a[@data-action="Restore"]';
 	protected $notMarkedFavoriteXpath = "//span[contains(@class,'icon-star')]";
 	protected $markedFavoriteXpath = "//span[contains(@class,'icon-starred')]";
+	protected $shareStateXpath = "//span[@class='state']";
+	protected $acceptShareBtnXpath = "//span[@class='fileactions']//a[contains(@class,'accept')]";
+	protected $declinePendingShareBtnXpath = "//span[@class='fileactions']//a[contains(@class,'reject')]";
 
 	/**
 	 * 
@@ -368,5 +371,62 @@ class FileRow extends OwnCloudPage {
 			);
 		}
 		$element->click();
+	}
+
+	/**
+	 * returns the share state (only works on the "Shared with you" page)
+	 * 
+	 * @throws ElementNotFoundException
+	 * 
+	 * @return string
+	 */
+	public function getShareState() {
+		$element = $this->rowElement->find("xpath", $this->shareStateXpath);
+		if (is_null($element)) {
+			throw new ElementNotFoundException(
+				__METHOD__ .
+				" sharing state elment with xpath $this->shareStateXpath not found"
+			);
+		}
+		return $element->getText();
+	}
+
+	/**
+	 *
+	 * @param Session $session
+	 * 
+	 * @return void
+	 */
+	public function acceptShare($session) {
+		$element = $this->rowElement->find("xpath", $this->acceptShareBtnXpath);
+		if (is_null($element)) {
+			throw new ElementNotFoundException(
+				__METHOD__ .
+				" accept share button with xpath" .
+				" $this->acceptShareBtnXpath not found"
+			);
+		}
+		$element->click();
+		$this->waitForAjaxCallsToStartAndFinish($session);
+	}
+
+	/**
+	 *
+	 * @param Session $session
+	 * 
+	 * @return void
+	 */
+	public function declineShare($session) {
+		//TODO decline already accepted share
+		$element = $this->rowElement->find("xpath", $this->declinePendingShareBtnXpath);
+		if (is_null($element)) {
+			throw new ElementNotFoundException(
+				__METHOD__ .
+				" decline share button with xpath" .
+				" $this->declinePendingShareBtnXpath not found"
+			);
+		}
+		$element->click();
+		$this->waitForAjaxCallsToStartAndFinish($session);
 	}
 }
