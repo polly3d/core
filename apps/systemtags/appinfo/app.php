@@ -28,7 +28,7 @@ $eventDispatcher = \OC::$server->getEventDispatcher();
 $eventDispatcher->addListener(
 	'OCA\Files::loadAdditionalScripts',
 	function() {
-        // FIXME: no public API for these ?
+		// FIXME: no public API for these ?
 		\OC_Util::addVendorScript('select2/select2');
 		\OC_Util::addVendorStyle('select2/select2');
 

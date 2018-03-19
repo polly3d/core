@@ -189,12 +189,12 @@
 				query: function(query) {
 					// directly from search
 					query.callback({
-                        results: [{
-    						"id"       : query.term,
-    						"text"     : query.term,
-                            "disabled" : !_this.validateEmail(query.term)
-    					}]
-                    });
+						results: [{
+							"id"       : query.term,
+							"text"     : query.term,
+							"disabled" : !_this.validateEmail(query.term)
+						}]
+					});
 				}
 			}).on("change", function(e) {
 				if (e.added)
@@ -204,8 +204,6 @@
 					_this._removeAddress(e.removed.id);
 
 				_this.toggleMailElements();
-
-                console.log(_this._addresses);
 			});
 		},
 
