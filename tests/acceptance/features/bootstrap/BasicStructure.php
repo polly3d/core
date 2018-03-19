@@ -310,7 +310,7 @@ trait BasicStructure {
 	 * @param string $user
 	 * @param string $verb
 	 * @param string $url
-	 * @param \Behat\Gherkin\Node\TableNode $body
+	 * @param \Behat\Gherkin\Node\TableNode|null $body
 	 *
 	 * @return void
 	 */
