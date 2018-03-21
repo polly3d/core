@@ -576,7 +576,7 @@ class WebUISharingContext extends RawMinkContext implements Context {
 	 * @return void
 	 */
 	public function assertSharesIsInStateOnWebUIAfterPageReload($item, $state) {
-		$this->webUIGeneralContext->theUserReloadsTheCurrentPageOfTheWebUI();
+		$this->webUIFilesContext->theUserReloadsTheCurrentPageOfTheWebUI();
 		$this->sharedWithYouPage->waitForAjaxCallsToStartAndFinish($this->getSession());
 		$this->assertShareIsInStateOnWebUI($item, $state);
 	}
